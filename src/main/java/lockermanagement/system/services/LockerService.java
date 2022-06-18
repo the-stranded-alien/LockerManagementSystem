@@ -2,6 +2,8 @@ package lockermanagement.system.services;
 
 import lockermanagement.system.models.Customer;
 import lockermanagement.system.models.Locker;
+import lockermanagement.system.models.LockerRequest;
+import lockermanagement.system.models.LockerResponse;
 import lockermanagement.system.repositories.LockerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.locks.Lock;
 
 @Service
 public class LockerService {
@@ -37,30 +40,25 @@ public class LockerService {
         return locker;
     }
 
-    public Locker saveLocker(Locker locker) {
+    public Locker save(Locker locker) {
         return this.lockerRepository.save(locker);
     }
 
-    public Locker addNewLocker(Integer pin) {
-        if(pin < 100000 || pin > 999999) return null;
-        Locker locker = new Locker();
-        locker.createNewLocker(pin);
-        this.saveLocker(locker);
-        return locker;
+    public String addNew(Integer pin) {
+        if(pin < 100000 || pin > 999999) return "Invalid Pin Entered !";
+        Locker locker = new Locker(pin);
+        this.save(locker);
+        return "Locker Added !";
     }
 
-    public String book(Locker locker) {
-        Customer customer = this.customerService.findCustomerByMobileNumber(locker.getCustomerPhoneNumber());
+    public String book(LockerRequest lockerRequest) {
+        Customer customer = this.customerService.findCustomerByMobileNumber(lockerRequest.getMobileNumber());
         if(customer == null) return "This Customer Doesn't Exist !";
-        else {
-            Locker availableLocker = this.findLockerByPinCodeAndStatus(locker.getLocationPinCode(), Locker.Status.AVAILABLE);
-            if(availableLocker == null) return "No Locker Available at Given Location";
-            else {
-                Locker bookedLocker = availableLocker.bookLocker(locker.getCustomerPhoneNumber());
-                this.saveLocker(bookedLocker);
-                return "Success";
-            }
-        }
+        Locker availableLocker = this.findLockerByPinCodeAndStatus(lockerRequest.getPinCode(), Locker.Status.AVAILABLE);
+        if(availableLocker == null) return "No Locker Available at Given Location";
+        Locker bookedLocker = availableLocker.book(lockerRequest.getMobileNumber());
+        this.save(bookedLocker);
+        return "Success";
     }
 
     public boolean sendOTP(Locker locker) {
@@ -80,5 +78,10 @@ public class LockerService {
             this.lockerRepository.save(locker);
             return true;
         }
+    }
+
+    public LockerResponse status(Long id) {
+        Locker locker = this.findLockerById(id);
+        return new LockerResponse(locker);
     }
 }

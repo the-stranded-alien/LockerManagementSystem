@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.Hibernate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -12,6 +14,7 @@ import java.util.Objects;
 @Entity
 @NoArgsConstructor
 @Getter
+@EqualsAndHashCode
 @ToString
 public class Locker {
 
@@ -21,25 +24,27 @@ public class Locker {
 
     public enum Status {
         AVAILABLE,
+        UNAVAILABLE,
         BOOKED,
         OTP_SENT;
     };
     private Integer locationPinCode;
     private Integer otp;
-    private Long customerPhoneNumber;
+    private Long customerMobileNumber;
 
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    public Locker bookLocker(Long phoneNumber) {
-        this.customerPhoneNumber = phoneNumber;
-        this.status = Status.BOOKED;
-        return this;
-    }
-
-    public Locker createNewLocker(Integer pin) {
+    public Locker(Integer pin) {
         this.status = Status.AVAILABLE;
         this.locationPinCode = pin;
+        this.otp = null;
+        this.customerMobileNumber = null;
+    }
+
+    public Locker book(Long phoneNumber) {
+        this.customerMobileNumber = phoneNumber;
+        this.status = Status.BOOKED;
         return this;
     }
 
@@ -51,20 +56,7 @@ public class Locker {
 
     public void open() {
         this.status = Status.AVAILABLE;
-        this.customerPhoneNumber = null;
+        this.customerMobileNumber = null;
         this.otp = null;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        Locker locker = (Locker) o;
-        return id != null && Objects.equals(id, locker.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
     }
 }

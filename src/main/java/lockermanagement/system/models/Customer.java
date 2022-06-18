@@ -1,5 +1,6 @@
 package lockermanagement.system.models;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -14,6 +15,7 @@ import java.util.Objects;
 @Entity
 @NoArgsConstructor
 @Getter
+@EqualsAndHashCode
 @ToString
 public class Customer {
 
@@ -31,18 +33,5 @@ public class Customer {
         this.mobileNumber = mobileNumber;
         this.emailId = emailId;
         this.pinCode = pinCode;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        Customer customer = (Customer) o;
-        return id != null && Objects.equals(id, customer.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
     }
 }

@@ -1,6 +1,8 @@
 package lockermanagement.system.controllers;
 
 import lockermanagement.system.models.Locker;
+import lockermanagement.system.models.LockerRequest;
+import lockermanagement.system.models.LockerResponse;
 import lockermanagement.system.services.CustomerService;
 import lockermanagement.system.services.LockerService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,25 +20,21 @@ public class LockerController {
     @Autowired
     private CustomerService customerService;
 
-    @PostMapping("/add")
-    public ResponseEntity<String> addLocker(@RequestBody Locker locker) {
-        Locker newLocker = this.lockerService.addNewLocker(locker.getLocationPinCode());
-        if(newLocker != null) {
-            return new ResponseEntity<>("Locker Created With Id : " + newLocker.getId().toString(), HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Unable to Create Locker With Given Pin Code !", HttpStatus.BAD_REQUEST);
-        }
+    @PostMapping
+    public ResponseEntity<String> add(@RequestBody LockerRequest lockerRequest) {
+        String response = this.lockerService.addNew(lockerRequest.getPinCode());
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/{id}/status")
-    public ResponseEntity<Locker> status(@PathVariable("id") Long id) {
-        Locker locker = this.lockerService.findLockerById(id);
-        return new ResponseEntity<>(locker, HttpStatus.OK);
+    public ResponseEntity<LockerResponse> status(@PathVariable("id") Long id) {
+        LockerResponse response = this.lockerService.status(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/book")
-    public ResponseEntity<String> book(@RequestBody Locker locker) {
-        String bookingStatus = this.lockerService.book(locker);
+    public ResponseEntity<String> book(@RequestBody LockerRequest lockerRequest) {
+        String bookingStatus = this.lockerService.book(lockerRequest);
         if(bookingStatus == "Success") {
             return new ResponseEntity<>("Locker Booked Successfully !", HttpStatus.OK);
         } else {
@@ -54,9 +52,7 @@ public class LockerController {
         if(isOtpSent) {
             return new ResponseEntity<>("OTP Send Successfully, OTP = " + locker.getOtp().toString(), HttpStatus.OK);
         }
-        else {
-            return new ResponseEntity<>("Can't Send OTP For This Locker !", HttpStatus.BAD_REQUEST);
-        }
+        return new ResponseEntity<>("Can't Send OTP For This Locker !", HttpStatus.BAD_REQUEST);
     }
 
     @PatchMapping("/{id}/open")
@@ -65,13 +61,13 @@ public class LockerController {
         if(existingLocker == null) {
             return new ResponseEntity<>("Locker Not Found !", HttpStatus.BAD_REQUEST);
         }
-        else if(existingLocker.getStatus() != Locker.Status.OTP_SENT) {
+        if(existingLocker.getStatus() != Locker.Status.OTP_SENT) {
             return new ResponseEntity<>("Locker Not Accessible !", HttpStatus.BAD_REQUEST);
         }
-        else {
-            boolean isLockerOpened = this.lockerService.open(existingLocker, locker.getOtp());
-            if(isLockerOpened) return new ResponseEntity<>("Locker Opened !", HttpStatus.OK);
-            else return new ResponseEntity<>("Invalid OTP !", HttpStatus.BAD_REQUEST);
+        boolean isLockerOpened = this.lockerService.open(existingLocker, locker.getOtp());
+        if(isLockerOpened) {
+            return new ResponseEntity<>("Locker Opened !", HttpStatus.OK);
         }
+        return new ResponseEntity<>("Invalid OTP !", HttpStatus.BAD_REQUEST);
     }
 }
